@@ -44,7 +44,7 @@ def parse(image_name, path_to_save, path_to_load):
         result = cv2.warpPerspective(image,M,(W,H))
 
         # Save reult
-        cv2.imwrite(path_to_save + "/" + "position" + str(position) + "_" + image_name, result)
+        cv2.imwrite(path_to_save + "position" + str(position) + "_" + image_name, result)
 
         position += 1
     

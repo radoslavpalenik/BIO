@@ -2,14 +2,12 @@ import os
 import argparse
 from parser import parse as p
 import sys
+import fnmatch
 
 # function which find out if dir exists, if not create dir
 def ifDirNotExistCreate(name):
     if not os.path.isdir(name):
         os.makedirs(name)
-        return False
-    
-    return True
 
 parser = argparse.ArgumentParser()
  
@@ -37,10 +35,15 @@ data_directory_name_after_splitting = data_directory_name + "-after-splitting"
 # create dir for saving each angel of finger photos
 ifDirNotExistCreate(data_directory_name_after_splitting)
 
+counter = 0
+
 # splitting finger photos into corresponding parts and saving them to corresponding dir (its copy structure of original directory where were photos of fingers)
 for root, dirs, files in os.walk(dir_path + "/" + str(data_directory_name)):
     for dir in dirs: 
         ifDirNotExistCreate(data_directory_name_after_splitting + root[len(data_directory_path):] + "/" + dir)
 
     for file in files:
-        p(file, data_directory_name_after_splitting + root[len(data_directory_path):] + "/", root)
+        if fnmatch.fnmatch(file, '*.png'):
+            p(file, data_directory_name_after_splitting + root[len(data_directory_path):] + "/", root)
+            counter += 1
+            print(str(counter) + "\n")
