@@ -1,13 +1,14 @@
 import numpy as np
 import cv2
 from matplotlib import pyplot as plt # potom zmazat
+import sys
 
 # it shows image with given points if it is True
 isTesting = False
 
 
 # function which parse photo of finger to corresponding parts
-def parse(image_name, path_to_save, path_to_load):
+def parse(image_name, path_to_save, path_to_load, counter):
     image = cv2.imread(path_to_load + "/" + image_name)
 
     #TODO: Perspective transformation SRC: https://stackoverflow.com/questions/57207975/what-is-an-efficient-way-to-crop-out-a-slanted-box-from-image
@@ -45,12 +46,15 @@ def parse(image_name, path_to_save, path_to_load):
 
         # Save reult
         cv2.imwrite(path_to_save + "position" + str(position) + "_" + image_name, result)
-
+        print(f'Success! File {str(path_to_save + "position" + str(position) + "_" + image_name)} has been written. It was file with number: {counter}')
+        counter += 1
         position += 1
     
     # Show points on image
     if isTesting == True:
         plotPointsForTest(points_matrix, image) # just test if points are correct 
+    
+    return counter
 
 # function to plot points which are used for perspective transformation
 def plotPointsForTest(points_matrix, image):
