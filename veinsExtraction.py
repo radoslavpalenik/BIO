@@ -24,7 +24,7 @@ def start(dir_path, data_directory_name, output_directory_name):
         for file in files:
             if fnmatch.fnmatch(file, '*.png'):
                 counter += 1
-                output_file = output_directory_name + root[len(data_directory_path):] + "/" + file + "_veins_extractions" 
+                output_file = output_directory_name + root[len(data_directory_path):] + "/" + file[:-4] + "_veins_extractions.bmp" 
 
                 # load images
                 input_image = cv2.imread(root + "/" + file, 0)
