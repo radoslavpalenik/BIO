@@ -26,10 +26,12 @@ def start(dir_path, data_directory_name, output_directory_name):
             if fnmatch.fnmatch(file, '*.png'):
                 counter += 1
                 output_file = output_directory_name + root[len(data_directory_path):] + "/" + file[:-4] + "_veins_extractions.bmp" 
+                
 
                 # load images
                 input_image = cv2.imread(root + "/" + file, 0)
                 img = cv2.flip(input_image, 1)
+                height, width = img.shape[:2]
 
                 #canny filter
                 cv2.imshow('0_img', img)
@@ -48,6 +50,73 @@ def start(dir_path, data_directory_name, output_directory_name):
                 cv2.imshow('0_img-blurred', img_canny)
                 img_canny = cv2.Canny(img_canny, lower, upper)
                 cv2.imshow('2_canny_afterBlur', img_canny)
+
+
+
+                #Dilates finger lines to connect perimeter walls
+                dil_matrix = np.ones((2,30), np.uint8) 
+                d_im = cv2.dilate(img_canny, dil_matrix, iterations=3)
+                cv2.imshow('Initiation of mask creation', d_im)
+
+                #Gets contours of perimeter walls
+                contours, hierarchy = cv2.findContours(d_im, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_NONE)
+                contour_area = []
+
+                for c in contours:
+                    contour_area.append((cv2.contourArea(c), c))
+
+                contour_area = sorted(contour_area, key=lambda x:x[0], reverse=True)
+                
+                mask = np.zeros((height, width, 3), dtype = "uint8")
+
+                coords = np.vstack([contour_area[0][1], contour_area[1][1]])
+
+                cv2.fillPoly(mask, [coords], (255, 255, 255))
+                cv2.imshow('Initial contours',mask)
+
+                #Erodes perimeter walls to make finger mask more accurate
+                er_matrix = np.ones((1,10), np.uint8)
+                e_im = cv2.erode(mask, er_matrix, iterations=2) 
+
+                cv2.imshow('After erosion', e_im)
+
+                em_gray = cv2.cvtColor(e_im, cv2.COLOR_BGR2GRAY)
+
+                contours, hierarchy = cv2.findContours(em_gray, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_NONE)
+                contour_area = []
+
+                print(contours)
+
+                for c in contours:
+                    contour_area.append((cv2.contourArea(c), c))
+
+                #Finds extremes of contours to get finger perimeter
+                c = contour_area[0][1]
+                top_left_ext = tuple(c[c[:, :, 0].argmin()][0])
+                top_right_ext = tuple(c[c[:, :, 0].argmax()][0])
+
+                c = contour_area[1][1]
+                print(c[c[:, :, 0].argmin()][0])
+                bot_left_ext = tuple(c[c[:, :, 0].argmin()][0])
+                bot_right_ext = tuple(c[c[:, :, 0].argmax()][0])
+                
+                #Draws contours for debugging
+                
+                #cv2.drawContours(e_im, contours, -1, (0,120,0), 3)
+                #cv2.circle(e_im, top_left_ext, 4, (0, 0, 128), -1)
+                #cv2.circle(e_im, top_right_ext, 4, (0, 255, 0), -1)
+                #cv2.circle(e_im, bot_left_ext, 4, (128, 0, 128), -1)
+                #cv2.circle(e_im, bot_right_ext, 4, (0, 255, 255), -1)
+
+
+                #Creates perimeter in the image
+
+                cv2.line(e_im, top_left_ext, bot_left_ext, (255,255,255), 2)
+                cv2.line(e_im,top_right_ext, bot_right_ext, (255,255,255), 2)
+
+                cv2.imshow('Connected contours', e_im)
+
+
 
                 # get image parameters
                 height, width = img.shape[:2]
