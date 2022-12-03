@@ -4,6 +4,7 @@ import os
 import helper
 import fnmatch
 import numpy as np
+from tensorflow.keras.utils import img_to_array
 from matplotlib import pyplot as plt
 from skimage.filters import frangi, hessian
 
@@ -125,8 +126,6 @@ def start(dir_path, data_directory_name, output_directory_name):
                 cv2.drawContours(e_im, contours, -1, (255,255,255), thickness=cv2.FILLED)
                 cv2.imshow('Mask', e_im)
 
-
-
                 # get image parameters
                 height, width = img.shape[:2]
                 # get starting pixel coords (top left of cropped bottom)
@@ -156,6 +155,23 @@ def start(dir_path, data_directory_name, output_directory_name):
                 med_val = np.median(cl1)
                 lower = int(max(0, med_val))
                 upper = int(min(255, 2*med_val))
+
+                mask = img_to_array(e_im)   
+                binarized = 1.0 * (mask > 150)   
+                cv2.imshow('Binarized', binarized)
+
+                cl1 = np.uint8(cl1)
+                binarized = np.uint8(binarized)
+                
+                binarized = cv2.cvtColor(binarized, cv2.COLOR_BGR2GRAY)
+
+                h, w = cl1.shape
+                print(h)
+                print(w)
+                print(binarized.shape)
+
+                res = cv2.bitwise_and(cl1, cl1, mask = binarized)
+                cv2.imshow('applied mask', res)
 
                 # set global threshold value to eliminate grey values (binary)
                 #th0 = cv2.adaptiveThreshold(img_eq, 255, cv2.ADAPTIVE_THRESH_GAUSSIAN_C, cv2.THRESH_BINARY, 11, 3)
