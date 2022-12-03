@@ -3,6 +3,7 @@ import sys
 import os
 import helper
 import fnmatch
+import numpy as np
 from matplotlib import pyplot as plt
 from skimage.filters import frangi, hessian
 
@@ -30,17 +31,32 @@ def start(dir_path, data_directory_name, output_directory_name):
                 input_image = cv2.imread(root + "/" + file, 0)
                 img = cv2.flip(input_image, 1)
 
+                #canny filter
+                cv2.imshow('0_img', img)
+
+                # Applying CLAHE
+                clahe = cv2.createCLAHE(clipLimit=2.0, tileGridSize=(8,8))
+                cl = clahe.apply(img)
+
+                cv2.imshow('Result', cl)
+
+                img_canny = cv2.medianBlur(cl, 5)
+                med_val = np.median(img_canny)
+                lower = int(max(0 ,0.5*med_val))
+                upper = int(min(255,1*med_val))
+
+                cv2.imshow('0_img-blurred', img_canny)
+                img_canny = cv2.Canny(img_canny, lower, upper)
+                cv2.imshow('2_canny_afterBlur', img_canny)
+
                 # get image parameters
                 height, width = img.shape[:2]
                 # get starting pixel coords (top left of cropped bottom)
                 start_row, start_col = int(height * .5), int(0)
                 # get ending pixel coords (bottom right of cropped bottom)
                 end_row, end_col = int(height), int(width)
-               # cropped_bot = img[start_row:end_row, start_col:end_col]
-               # img = cropped_bot
 
                 # blur image to reduce noise
-
                 # equalize the histogram to improve contrast
                 img_eq = cv2.equalizeHist(img)
                 cv2.imshow('2_img_eq', img_eq)
@@ -55,20 +71,24 @@ def start(dir_path, data_directory_name, output_directory_name):
                 
                 cl1 = cl1.max()-cl1
                 cl1 = cl1.astype(float)
-            
-                cv2.imshow('inverted', cl1)
-                cv2.imshow('3.1_frangi_inv', frangi(cl1, black_ridges=False))
+                
+                cl1 = frangi(cl1, black_ridges=False)
+                cv2.imshow('3.1_frangi_inv', cl1)
+
+                med_val = np.median(cl1)
+                lower = int(max(0, med_val))
+                upper = int(min(255, 2*med_val))
 
                 # set global threshold value to eliminate grey values (binary)
-                th0 = cv2.adaptiveThreshold(img_eq, 255, cv2.ADAPTIVE_THRESH_GAUSSIAN_C, cv2.THRESH_BINARY, 11, 3)
-                cv2.imshow('4_th0', th0)
+                #th0 = cv2.adaptiveThreshold(img_eq, 255, cv2.ADAPTIVE_THRESH_GAUSSIAN_C, cv2.THRESH_BINARY, 11, 3)
+                #cv2.imshow('4_th0', th0)
 
                 # median to reduce noise
-                median = cv2.medianBlur(th0, 3)
-                cv2.imshow('5_median', median)
+                #median = cv2.medianBlur(th0, 3)
+                #cv2.imshow('5_median', median)
                 # blur to smooth edges
-                blur = cv2.GaussianBlur(median, (3, 3), 0)
-                cv2.imshow('6_blur', blur)
+                #blur = cv2.GaussianBlur(median, (3, 3), 0)
+                #cv2.imshow('6_blur', blur)
 
                 while(1):
                     k = cv2.waitKey(5) & 0xFF
@@ -78,5 +98,5 @@ def start(dir_path, data_directory_name, output_directory_name):
                 cv2.destroyAllWindows()
 
                 # save to disk
-                cv2.imwrite(output_file, blur)
+                cv2.imwrite(output_file, cl1)
                 print(f'Success! File {output_file} has been written. It was file with number: {counter}')
