@@ -126,6 +126,12 @@ def start(dir_path, data_directory_name, output_directory_name):
                 cv2.drawContours(e_im, contours, -1, (255,255,255), thickness=cv2.FILLED)
                 cv2.imshow('Mask', e_im)
 
+                #Erodes perimeter walls to make finger mask more accurate
+                er_matrix = np.ones((5,2), np.uint8)
+                e_im = cv2.erode(e_im, er_matrix, iterations=2) 
+
+                cv2.imshow('Thinner mask', e_im)
+
                 # get image parameters
                 height, width = img.shape[:2]
                 # get starting pixel coords (top left of cropped bottom)
@@ -158,7 +164,7 @@ def start(dir_path, data_directory_name, output_directory_name):
                 upper = int(min(255, 2*med_val))
 
                 #mask = img_to_array(e_im)   
-                #binarized = 1.0 * (mask > 150)   
+                binarized = np.zeros((height, width, 3), dtype = "uint8")
                 #cv2.imshow('Binarized', binarized)
 
                 cl1 = np.uint8(cl1)
