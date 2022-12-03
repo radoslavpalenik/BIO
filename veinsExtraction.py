@@ -116,6 +116,15 @@ def start(dir_path, data_directory_name, output_directory_name):
 
                 cv2.imshow('Connected contours', e_im)
 
+                #Creates Mask
+
+                em_gray = cv2.cvtColor(e_im, cv2.COLOR_BGR2GRAY)
+                contours, hierarchy = cv2.findContours(em_gray, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_NONE)
+                print("***************\n",contours)
+
+                cv2.drawContours(e_im, contours, -1, (255,255,255), thickness=cv2.FILLED)
+                cv2.imshow('Mask', e_im)
+
 
 
                 # get image parameters
