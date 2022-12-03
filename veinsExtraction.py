@@ -150,15 +150,16 @@ def start(dir_path, data_directory_name, output_directory_name):
                 cl1 = cl1.astype(float)
                 
                 cl1 = frangi(cl1, black_ridges=False)
+                franghi = cl1
                 cv2.imshow('3.1_frangi_inv', cl1)
 
                 med_val = np.median(cl1)
                 lower = int(max(0, med_val))
                 upper = int(min(255, 2*med_val))
 
-                mask = img_to_array(e_im)   
-                binarized = 1.0 * (mask > 150)   
-                cv2.imshow('Binarized', binarized)
+                #mask = img_to_array(e_im)   
+                #binarized = 1.0 * (mask > 150)   
+                #cv2.imshow('Binarized', binarized)
 
                 cl1 = np.uint8(cl1)
                 binarized = np.uint8(binarized)
@@ -169,9 +170,19 @@ def start(dir_path, data_directory_name, output_directory_name):
                 print(h)
                 print(w)
                 print(binarized.shape)
+                em_gray = cv2.cvtColor(e_im, cv2.COLOR_BGR2GRAY)
 
-                res = cv2.bitwise_and(cl1, cl1, mask = binarized)
+                res = cv2.bitwise_and(franghi, franghi, mask = em_gray)
                 cv2.imshow('applied mask', res)
+
+
+                #https://learnopencv.com/opencv-threshold-python-cpp/
+                th, binarized = cv2.threshold(res, 0, 255, cv2.THRESH_BINARY_INV); 
+                
+        
+
+                cv2.imshow('Binarized', binarized)
+
 
                 # set global threshold value to eliminate grey values (binary)
                 #th0 = cv2.adaptiveThreshold(img_eq, 255, cv2.ADAPTIVE_THRESH_GAUSSIAN_C, cv2.THRESH_BINARY, 11, 3)
