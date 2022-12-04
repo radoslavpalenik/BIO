@@ -64,8 +64,10 @@ def mask_constructor(img_canny, height, width):
     #Erodes perimeter walls to make finger mask more accurate
     er_matrix = np.ones((1,10), np.uint8)
     e_im = cv2.erode(mask, er_matrix, iterations=2) 
-
+    e_im = cv2.rectangle(e_im, (0,0), (600,200), (0,0,0), 2)
     cv2.imshow('After erosion', e_im)
+    
+   
 
     em_gray = cv2.cvtColor(e_im, cv2.COLOR_BGR2GRAY)
 
@@ -234,14 +236,14 @@ def start(dir_path, data_directory_name, output_directory_name):
                 color = np.array([30, 10, 190], dtype = np.uint8)
                 img[skeleton * 255 > 0] = color
                 cv2.imshow('Highlighted Veins', img)
-
+                
                 while(1):
                     k = cv2.waitKey(5) & 0xFF
                     if k == 27:
                         break
                 
                 cv2.destroyAllWindows()
-
+                
                 # save to disk
                 cv2.imwrite(output_file, img)
                 print(f'Success! File {output_file} has been written. It was file with number: {counter}')
