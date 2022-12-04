@@ -135,8 +135,6 @@ def mask_constructor(img_canny, height, width):
 
     cv2.drawContours(e_im, contours, -1, (255,255,255), thickness=cv2.FILLED)
     
-
-
     #Erodes perimeter walls to make finger mask more accurate
     er_matrix = np.ones((5,2), np.uint8)
     e_im = cv2.erode(e_im, er_matrix, iterations=2) 
@@ -191,6 +189,8 @@ def vein_extractor(img, e_im, height, width):
 
     return img
 
+
+#Helper function to allow running standalone  extraction from 1 prepared image
 if __name__ == '__main__':
     if len(sys.argv) == 2:
         file = sys.argv[1]
