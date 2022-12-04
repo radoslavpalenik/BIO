@@ -1,3 +1,7 @@
+# BIO Project
+# Authors:  Radoslav Páleník <xpalen05@stud.fit.vutbr.cz>, Jozef Čabala <xcabal07@stud.fit.vutbr.cz>, Jana Gregorová <xgrego20@stud.fit.vutbr.cz>
+# Name: Finger blood vessel detection from multiple viewpoints
+# Date 2022-12-04
 import sys
 import os
 import argparse
@@ -21,7 +25,7 @@ parser.add_argument("-veinsExtraction", "--veinsExtraction", help="Argument for 
 parser.add_argument("-output", "--output", help="Argument for name of output directory", type=str)
 
 # arg0 is python and arg1 is app.py
-print("BIO Zadanie X: ")
+print("BIO Project 08 : Finger blood vessel detection from multiple viewpoints")
 print("Usage: \npython app.py -dataInit <path to data directory>\npython app.py -veinsExtraction <path to data prepared for veins extraction")
 print("-----------------------------------------------------------------------------")
 
@@ -47,3 +51,5 @@ else:
         print("Start of veins extraction")
         veinsExtraction.start(dir_path, data_directory_name, output_directory_name)
         print("End of veins extraction")
+
+        

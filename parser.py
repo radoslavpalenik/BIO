@@ -1,3 +1,7 @@
+# BIO Project
+# Authors:  Radoslav Páleník <xpalen05@stud.fit.vutbr.cz>, Jozef Čabala <xcabal07@stud.fit.vutbr.cz>, Jana Gregorová <xgrego20@stud.fit.vutbr.cz>
+# Name: Finger blood vessel detection from multiple viewpoints
+# Date 2022-12-04
 import numpy as np
 import cv2
 from matplotlib import pyplot as plt # potom zmazat
