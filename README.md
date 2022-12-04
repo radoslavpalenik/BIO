@@ -7,3 +7,10 @@ Na snímku obsahující několik různých úhlů pohled na stejný prst s NIR p
 K řešení projektu bude poskytnuta databáze snímků ze zařízení, které snímá prsty z různých úhlů pohledu. Tuto databázi by bylo vhodné jako součást práce rozšířit.
 
 Součástí všech projektů bude obhajoba a dokumentace. Perfektní splnění projektu může vést na získání bonusových bodů v předmětu.
+## Spustenie
+Extrakcia z celého datasetu
+
+1. krok
+python app.py --dataInit <root dir of dataset> --output <output directory>
+2. krok 
+python app.py --veinsExtraction <Step 1 output> --output <output directory> 
