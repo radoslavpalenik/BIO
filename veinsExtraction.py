@@ -9,7 +9,138 @@ from matplotlib import pyplot as plt
 from skimage.filters import frangi, hessian
 from skimage.morphology import skeletonize
 
-# source: https://github.com/donblob/v_ex
+
+def mask_constructor(img_canny, height, width):
+    
+
+    contours, hierarchy = cv2.findContours(img_canny, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_NONE)
+    #Erases minor artifacts in image 
+    for contour in contours:
+        (x, y, w, h) = cv2.boundingRect(contour)
+        if h<50 and w<50: 
+            cv2.fillConvexPoly(img_canny,contour,0) 
+
+    #Connects nearby edges with closing operation
+    closing = cv2.morphologyEx(img_canny, cv2.MORPH_CLOSE, cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (200,20)));
+    cv2.imshow('Canny closing', closing)
+
+    #Dilates finger lines to connect perimeter walls
+    dil_matrix = np.ones((2,30), np.uint8) 
+    d_im = cv2.dilate(closing, dil_matrix, iterations=3)
+    cv2.imshow('Initiation of mask creation', d_im)
+
+    #Gets contours of perimeter walls
+    contours, hierarchy = cv2.findContours(d_im, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_NONE)
+    contour_area = []
+
+    if len(contours) > 1:
+
+        for c in contours:
+            contour_area.append((cv2.contourArea(c), c))
+
+        contour_area = sorted(contour_area, key=lambda x:x[0], reverse=True)
+        
+        mask = np.zeros((height, width, 3), dtype = "uint8")
+
+        coords = np.vstack([contour_area[0][1], contour_area[1][1]])
+
+        cv2.fillPoly(mask, [coords], (255, 255, 255))
+        cv2.imshow('Initial contours',mask)
+
+        #Erodes perimeter walls to make finger mask more accurate
+        er_matrix = np.ones((1,10), np.uint8)
+        e_im = cv2.erode(mask, er_matrix, iterations=2) 
+
+        cv2.imshow('After erosion', e_im)
+
+        em_gray = cv2.cvtColor(e_im, cv2.COLOR_BGR2GRAY)
+
+        contours, hierarchy = cv2.findContours(em_gray, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_NONE)
+        contour_area = []
+
+        print(len(contours))
+
+        for c in contours:
+            contour_area.append((cv2.contourArea(c), c))
+
+        #Finds extremes of contours to get finger perimeter
+        c = contour_area[0][1]
+        bot_left_ext = tuple(c[c[:, :, 0].argmin()][0])
+        bot_right_ext = tuple(c[c[:, :, 0].argmax()][0])
+
+        c = contour_area[1][1]
+        top_left_ext = tuple(c[c[:, :, 0].argmin()][0])
+        top_right_ext = tuple(c[c[:, :, 0].argmax()][0])
+        
+        #Draws contours for debugging
+        
+        #cv2.drawContours(e_im, contours, -1, (0,120,0), 3)
+        #cv2.circle(e_im, top_left_ext, 4, (0, 0, 128), -1)
+        #cv2.circle(e_im, top_right_ext, 4, (0, 255, 0), -1)
+        #cv2.circle(e_im, bot_left_ext, 4, (128, 0, 128), -1)
+        #cv2.circle(e_im, bot_right_ext, 4, (0, 255, 255), -1)
+
+
+        #Creates perimeter in the image
+
+        cv2.line(e_im, top_left_ext, bot_left_ext, (255,255,255), 2)
+        cv2.line(e_im,top_right_ext, bot_right_ext, (255,255,255), 2)
+
+        cv2.imshow('Connected contours', e_im)
+
+        #Creates Mask
+
+        
+        if bot_left_ext[0] > 150:
+            print("BL RED: ",bot_left_ext)
+            cv2.line(e_im, (20, bot_left_ext[1]), bot_left_ext,(255,255,255), 2 )
+            bot_left_ext = ((20, bot_left_ext[1]))
+        if top_left_ext[0] > 150:
+            print("TL GREEN: ",top_left_ext)
+            cv2.line(e_im, (20, top_left_ext[1]), top_left_ext,(255,255,255), 2 )
+            top_left_ext = (20, top_left_ext[1])
+        cv2.line(e_im, top_left_ext, bot_left_ext, (255,255,255), 2)
+        
+
+
+        if bot_right_ext[0] < 450:
+            print("BR BLUE: ",bot_right_ext)
+            cv2.line(e_im, bot_right_ext, (580, bot_right_ext[1]), (255,255,255), 2 )
+            bot_right_ext =(580, bot_right_ext[1])
+        if top_right_ext[0] < 450:
+            print("TR XXX: ",top_right_ext)
+            cv2.line(e_im, top_right_ext, ( 580, top_right_ext[1]), (255,255,255), 2 )
+            top_right_ext = ( 580, top_right_ext[1])
+        cv2.line(e_im,top_right_ext, bot_right_ext, (255,255,255), 2)
+
+        em_gray = cv2.cvtColor(e_im, cv2.COLOR_BGR2GRAY)
+        contours, hierarchy = cv2.findContours(em_gray, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_NONE)
+
+        cv2.drawContours(e_im, contours, -1, (255,255,255), thickness=cv2.FILLED)
+        
+
+        cv2.imshow('Mask', e_im)
+
+        #Erodes perimeter walls to make finger mask more accurate
+        er_matrix = np.ones((5,2), np.uint8)
+        e_im = cv2.erode(e_im, er_matrix, iterations=2) 
+
+        cv2.imshow('Thinner mask', e_im)
+        print(e_im.shape)
+
+
+    else:
+        print("1 Contour")
+        er_matrix = np.ones((5,2), np.uint8)
+        e_im = cv2.erode(d_im, er_matrix, iterations=2) 
+        e_im = cv2.cvtColor(e_im,cv2.COLOR_GRAY2RGB)
+
+        
+        cv2.circle(e_im, (100,100), 8, (255, 0, 255), -1)
+        print(e_im.shape)
+
+    return e_im
+
 
 def start(dir_path, data_directory_name, output_directory_name):
     data_directory_path = dir_path + "/" + data_directory_name 
@@ -42,96 +173,19 @@ def start(dir_path, data_directory_name, output_directory_name):
                 clahe = cv2.createCLAHE(clipLimit=2.0, tileGridSize=(8,8))
                 cl = clahe.apply(img)
 
-                cv2.imshow('Result', cl)
+                #-cv2.imshow('Result', cl)
 
                 img_canny = cv2.medianBlur(cl, 5)
                 med_val = np.median(img_canny)
                 lower = int(max(0 ,0.5*med_val))
                 upper = int(min(255,1*med_val))
 
-                cv2.imshow('0_img-blurred', img_canny)
+                #-cv2.imshow('0_img-blurred', img_canny)
                 img_canny = cv2.Canny(img_canny, lower, upper)
                 cv2.imshow('2_canny_afterBlur', img_canny)
 
 
-
-                #Dilates finger lines to connect perimeter walls
-                dil_matrix = np.ones((2,30), np.uint8) 
-                d_im = cv2.dilate(img_canny, dil_matrix, iterations=3)
-                cv2.imshow('Initiation of mask creation', d_im)
-
-                #Gets contours of perimeter walls
-                contours, hierarchy = cv2.findContours(d_im, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_NONE)
-                contour_area = []
-
-                for c in contours:
-                    contour_area.append((cv2.contourArea(c), c))
-
-                contour_area = sorted(contour_area, key=lambda x:x[0], reverse=True)
-                
-                mask = np.zeros((height, width, 3), dtype = "uint8")
-
-                coords = np.vstack([contour_area[0][1], contour_area[1][1]])
-
-                cv2.fillPoly(mask, [coords], (255, 255, 255))
-                cv2.imshow('Initial contours',mask)
-
-                #Erodes perimeter walls to make finger mask more accurate
-                er_matrix = np.ones((1,10), np.uint8)
-                e_im = cv2.erode(mask, er_matrix, iterations=2) 
-
-                cv2.imshow('After erosion', e_im)
-
-                em_gray = cv2.cvtColor(e_im, cv2.COLOR_BGR2GRAY)
-
-                contours, hierarchy = cv2.findContours(em_gray, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_NONE)
-                contour_area = []
-
-                print(contours)
-
-                for c in contours:
-                    contour_area.append((cv2.contourArea(c), c))
-
-                #Finds extremes of contours to get finger perimeter
-                c = contour_area[0][1]
-                top_left_ext = tuple(c[c[:, :, 0].argmin()][0])
-                top_right_ext = tuple(c[c[:, :, 0].argmax()][0])
-
-                c = contour_area[1][1]
-                print(c[c[:, :, 0].argmin()][0])
-                bot_left_ext = tuple(c[c[:, :, 0].argmin()][0])
-                bot_right_ext = tuple(c[c[:, :, 0].argmax()][0])
-                
-                #Draws contours for debugging
-                
-                #cv2.drawContours(e_im, contours, -1, (0,120,0), 3)
-                #cv2.circle(e_im, top_left_ext, 4, (0, 0, 128), -1)
-                #cv2.circle(e_im, top_right_ext, 4, (0, 255, 0), -1)
-                #cv2.circle(e_im, bot_left_ext, 4, (128, 0, 128), -1)
-                #cv2.circle(e_im, bot_right_ext, 4, (0, 255, 255), -1)
-
-
-                #Creates perimeter in the image
-
-                cv2.line(e_im, top_left_ext, bot_left_ext, (255,255,255), 2)
-                cv2.line(e_im,top_right_ext, bot_right_ext, (255,255,255), 2)
-
-                cv2.imshow('Connected contours', e_im)
-
-                #Creates Mask
-
-                em_gray = cv2.cvtColor(e_im, cv2.COLOR_BGR2GRAY)
-                contours, hierarchy = cv2.findContours(em_gray, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_NONE)
-                print("***************\n",contours)
-
-                cv2.drawContours(e_im, contours, -1, (255,255,255), thickness=cv2.FILLED)
-                cv2.imshow('Mask', e_im)
-
-                #Erodes perimeter walls to make finger mask more accurate
-                er_matrix = np.ones((5,2), np.uint8)
-                e_im = cv2.erode(e_im, er_matrix, iterations=2) 
-
-                cv2.imshow('Thinner mask', e_im)
+                e_im = mask_constructor(img_canny, height, width);
 
                 # get image parameters
                 height, width = img.shape[:2]
@@ -143,16 +197,16 @@ def start(dir_path, data_directory_name, output_directory_name):
                 # blur image to reduce noise
                 # equalize the histogram to improve contrast
                 img_eq = cv2.equalizeHist(img)
-                cv2.imshow('2_img_eq', img_eq)
+                #-cv2.imshow('2_img_eq', img_eq)
 
                 # create Contrast Limited Adaptive Histogram Equalization
                 clahe = cv2.createCLAHE(clipLimit=9.0, tileGridSize=(10, 10))
                 cl1 = clahe.apply(img_eq)
-                cv2.imshow('3_cl1', cl1)
+                #-cv2.imshow('3_cl1', cl1)
 
                 #img_blur = cv2.medianBlur(cl1, 9)
                 img_blur = cv2.bilateralFilter(cl1, 9, 75, 75)
-                cv2.imshow('3.1_img_blur', img_blur)
+                #-cv2.imshow('3.1_img_blur', img_blur)
                 
                 cl1 = cl1.max()-cl1
                 cl1 = cl1.astype(float)
@@ -160,7 +214,7 @@ def start(dir_path, data_directory_name, output_directory_name):
                 
                 cl1 = frangi(cl1, black_ridges=False)
                 franghi = cl1
-                cv2.imshow('3.1_frangi_inv', cl1)
+                #-cv2.imshow('3.1_frangi_inv', cl1)
 
                 binarized = np.zeros((height, width, 3), dtype = "uint8")
                 binarized = np.uint8(binarized)
@@ -169,7 +223,7 @@ def start(dir_path, data_directory_name, output_directory_name):
                 em_gray = cv2.cvtColor(e_im, cv2.COLOR_BGR2GRAY)
 
                 res = cv2.bitwise_and(franghi, franghi, mask = em_gray)
-                cv2.imshow('applied mask', res)
+                #-cv2.imshow('applied mask', res)
     
                 res = np.uint8(res*255)
                 res = cv2.medianBlur(res, 13)
