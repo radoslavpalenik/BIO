@@ -7,6 +7,7 @@ import numpy as np
 from tensorflow.keras.utils import img_to_array
 from matplotlib import pyplot as plt
 from skimage.filters import frangi, hessian
+from skimage.morphology import skeletonize
 
 # source: https://github.com/donblob/v_ex
 
@@ -149,57 +150,42 @@ def start(dir_path, data_directory_name, output_directory_name):
                 cl1 = clahe.apply(img_eq)
                 cv2.imshow('3_cl1', cl1)
 
-                img_blur = cv2.medianBlur(cl1, 5)
+                #img_blur = cv2.medianBlur(cl1, 9)
+                img_blur = cv2.bilateralFilter(cl1, 9, 75, 75)
                 cv2.imshow('3.1_img_blur', img_blur)
                 
                 cl1 = cl1.max()-cl1
                 cl1 = cl1.astype(float)
+                cl1 = np.float32(cl1)
                 
                 cl1 = frangi(cl1, black_ridges=False)
                 franghi = cl1
                 cv2.imshow('3.1_frangi_inv', cl1)
 
-                med_val = np.median(cl1)
-                lower = int(max(0, med_val))
-                upper = int(min(255, 2*med_val))
-
-                #mask = img_to_array(e_im)   
                 binarized = np.zeros((height, width, 3), dtype = "uint8")
-                #cv2.imshow('Binarized', binarized)
-
-                cl1 = np.uint8(cl1)
                 binarized = np.uint8(binarized)
-                
                 binarized = cv2.cvtColor(binarized, cv2.COLOR_BGR2GRAY)
 
-                h, w = cl1.shape
-                print(h)
-                print(w)
-                print(binarized.shape)
                 em_gray = cv2.cvtColor(e_im, cv2.COLOR_BGR2GRAY)
 
                 res = cv2.bitwise_and(franghi, franghi, mask = em_gray)
                 cv2.imshow('applied mask', res)
-
+    
+                res = np.uint8(res*255)
+                res = cv2.medianBlur(res, 13)
 
                 #https://learnopencv.com/opencv-threshold-python-cpp/
-                th, binarized = cv2.threshold(res, 0, 255, cv2.THRESH_BINARY_INV); 
-                
-        
+                th, binarized = cv2.threshold(res, 15, 255, cv2.THRESH_BINARY)
+                #cv2.imshow('Binarized', binarized)
 
-                cv2.imshow('Binarized', binarized)
+                skeleton = skeletonize(binarized / 255)
+                skeleton = skeleton.astype(np.uint8)
+                #cv2.imshow('Skeleton', skeleton * 255)
 
-
-                # set global threshold value to eliminate grey values (binary)
-                #th0 = cv2.adaptiveThreshold(img_eq, 255, cv2.ADAPTIVE_THRESH_GAUSSIAN_C, cv2.THRESH_BINARY, 11, 3)
-                #cv2.imshow('4_th0', th0)
-
-                # median to reduce noise
-                #median = cv2.medianBlur(th0, 3)
-                #cv2.imshow('5_median', median)
-                # blur to smooth edges
-                #blur = cv2.GaussianBlur(median, (3, 3), 0)
-                #cv2.imshow('6_blur', blur)
+                img = cv2.cvtColor(img,cv2.COLOR_GRAY2RGB)
+                color = np.array([30, 10, 190], dtype = np.uint8)
+                img[skeleton * 255 > 0] = color
+                cv2.imshow('Highlighted Veins', img)
 
                 while(1):
                     k = cv2.waitKey(5) & 0xFF
@@ -209,5 +195,5 @@ def start(dir_path, data_directory_name, output_directory_name):
                 cv2.destroyAllWindows()
 
                 # save to disk
-                cv2.imwrite(output_file, cl1)
+                cv2.imwrite(output_file, img)
                 print(f'Success! File {output_file} has been written. It was file with number: {counter}')
