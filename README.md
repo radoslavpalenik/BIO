@@ -1,5 +1,5 @@
 # BIO - projekt
-Biometrické systémy - Detekce krevního řečiště prstu z více úhlu pohledu
+Biometrické systémy - Detekce krevního řečiště prstu z více úhlu pohledu\
 Hodnotenie: 15.8/18b
 
 ## Popis
@@ -9,7 +9,7 @@ K řešení projektu bude poskytnuta databáze snímků ze zařízení, které s
 
 Součástí všech projektů bude obhajoba a dokumentace. Perfektní splnění projektu může vést na získání bonusových bodů v předmětu.
 ## Spustenie
-1. krok (Spracovanie datasetu)
+1. krok (Spracovanie datasetu)\
 `python app.py --dataInit <root dir of dataset> --output <output directory>`
-2. krok (extrakcia ciev)
+2. krok (extrakcia ciev)\
 `python app.py --veinsExtraction <Step 1 output> --output <output directory>`
